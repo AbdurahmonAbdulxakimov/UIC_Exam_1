@@ -81,11 +81,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class LessonSerializer(serializers.ModelSerializer):
     product = ProductSerializer(many=True, read_only=True)
-    viewed_duration_seconds = serializers.IntegerField()
-    is_complete = serializers.BooleanField()
-    user = serializers.IntegerField()
-    last_viewed = serializers.DateTimeField(allow_null=True)
-    # user = UserSerializer()
 
     class Meta:
         model = Lesson
@@ -95,23 +90,25 @@ class LessonSerializer(serializers.ModelSerializer):
             "title",
             "video",
             "duration_seconds",
+            "created_at",
+            "updated_at",
+        )
+
+
+class LessonViewedSerializer(serializers.ModelSerializer):
+    lesson = LessonSerializer()
+    user = UserSerializer()
+
+    class Meta:
+        model = LessonViewed
+        fields = (
+            "id",
             "user",
+            "lesson",
             "viewed_duration_seconds",
             "is_complete",
             "last_viewed",
         )
-
-
-class LessonViewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonViewed
-        fields = "__all__"
-
-
-class LessonViewedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonViewed
-        fields = ("viewed_duration_seconds",)
 
 
 class ProductStatisticsSerializer(serializers.ModelSerializer):

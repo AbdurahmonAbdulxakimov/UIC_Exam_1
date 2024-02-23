@@ -51,13 +51,14 @@ from .models import Lesson, LessonViewed, Product
 from users.models import User
 from .serializers import (
     LessonSerializer,
-    LessonViewSerializer,
+    LessonViewedSerializer,
     ProductStatisticsSerializer,
 )
 
 
 class LessonListView(generics.ListAPIView):
-    serializer_class = LessonSerializer
+    queryset = LessonViewed.objects.all()
+    serializer_class = LessonViewedSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -66,35 +67,19 @@ class LessonListView(generics.ListAPIView):
             product_id = self.kwargs.get("product_id")
             # Get all lessons of specific product associated with products the user has access to
             queryset = (
-                Lesson.objects.prefetch_related(
-                    "product", "lessons_viewed", "product__orders"
-                )
-                .annotate(
-                    user=F("product__orders__user"),
-                    viewed_duration_seconds=F(
-                        "lessons_viewed__viewed_duration_seconds"
-                    ),
-                    is_complete=F("lessons_viewed__is_complete"),
-                    last_viewed=F("lessons_viewed__last_viewed"),
-                )
-                .filter(Q(product__orders__user=user) & Q(product=product_id))
+                super()
+                .get_queryset()
+                .select_related("lesson")
+                .filter(Q(user=user) & Q(product_id=product_id))
                 .distinct()
             )
         else:
             # Get all lessons associated with products the user has access to
             queryset = (
-                Lesson.objects.prefetch_related(
-                    "product", "lessons_viewed", "product__orders"
-                )
-                .annotate(
-                    user=F("product__orders__user"),
-                    viewed_duration_seconds=F(
-                        "lessons_viewed__viewed_duration_seconds"
-                    ),
-                    is_complete=F("lessons_viewed__is_complete"),
-                    last_viewed=F("lessons_viewed__last_viewed"),
-                )
-                .filter(Q(product__orders__user=user))
+                super()
+                .get_queryset()
+                .select_related("lesson")
+                .filter(user=user)
                 .distinct()
             )
         return queryset

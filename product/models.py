@@ -108,8 +108,14 @@ class Order(BaseModel):
     def __str__(self) -> str:
         return f"{self.product} ordered by {self.user}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        lessons = Lesson.objects.filter(product=self.product)
+        for lesson in lessons:
+            LessonViewed.objects.create(user=self.user, lesson=lesson)
 
-class Lesson(models.Model):
+
+class Lesson(BaseModel):
     product = models.ManyToManyField(Product, related_name="lessons")
     title = models.CharField(max_length=255)
     video = models.FileField(upload_to="lessons/")
@@ -119,7 +125,7 @@ class Lesson(models.Model):
         return f"{self.title}"
 
 
-class LessonViewed(models.Model):
+class LessonViewed(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(
         Lesson, on_delete=models.CASCADE, related_name="lessons_viewed"
