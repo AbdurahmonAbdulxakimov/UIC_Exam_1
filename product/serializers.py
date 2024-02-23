@@ -72,7 +72,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    owner = UserSerializer()
+    # owner = UserSerializer()
 
     class Meta:
         model = Product
@@ -80,9 +80,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class LessonSerializer(serializers.ModelSerializer):
-    viewed_duration_seconds = serializers.IntegerField()
-    is_complete = serializers.BooleanField()
-    user = UserSerializer()
+    product = ProductSerializer(many=True, read_only=True)
 
     class Meta:
         model = Lesson
@@ -92,13 +90,40 @@ class LessonSerializer(serializers.ModelSerializer):
             "title",
             "video",
             "duration_seconds",
-            "user",
-            "viewed_duration_seconds",
-            "is_complete",
+            "created_at",
+            "updated_at",
         )
 
 
-class LessonViewSerializer(serializers.ModelSerializer):
+class LessonViewedSerializer(serializers.ModelSerializer):
+    lesson = LessonSerializer()
+    user = UserSerializer()
+
     class Meta:
         model = LessonViewed
-        fields = "__all__"
+        fields = (
+            "id",
+            "user",
+            "lesson",
+            "viewed_duration_seconds",
+            "is_complete",
+            "last_viewed",
+        )
+
+
+class ProductStatisticsSerializer(serializers.ModelSerializer):
+    lessons_viewed = LessonViewedSerializer(many=True, read_only=True)
+    lessons_viewed_count = serializers.IntegerField()
+    total_viewed_duration_seconds = serializers.IntegerField()
+    percentage_orders = serializers.FloatField()
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "title",
+            "lessons_viewed",
+            "lessons_viewed_count",
+            "total_viewed_duration_seconds",
+            "percentage_orders",
+        )

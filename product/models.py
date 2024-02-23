@@ -95,6 +95,9 @@ class Product(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
 
+    def __str__(self) -> str:
+        return f"{self.title}"
+
 
 class Order(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
@@ -105,8 +108,14 @@ class Order(BaseModel):
     def __str__(self) -> str:
         return f"{self.product} ordered by {self.user}"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        lessons = Lesson.objects.filter(product=self.product)
+        for lesson in lessons:
+            LessonViewed.objects.create(user=self.user, lesson=lesson)
 
-class Lesson(models.Model):
+
+class Lesson(BaseModel):
     product = models.ManyToManyField(Product, related_name="lessons")
     title = models.CharField(max_length=255)
     video = models.FileField(upload_to="lessons/")
@@ -116,13 +125,17 @@ class Lesson(models.Model):
         return f"{self.title}"
 
 
-class LessonViewed(models.Model):
+class LessonViewed(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(
         Lesson, on_delete=models.CASCADE, related_name="lessons_viewed"
     )
     viewed_duration_seconds = models.IntegerField(default=0)
     is_complete = models.BooleanField(default=False)
+    last_viewed = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.lesson.title} viewd by {self.user.username}"
 
     def save(self, *args, **kwargs):
         if self.viewed_duration_seconds >= 0.8 * self.lesson.duration_seconds:
